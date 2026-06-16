@@ -287,18 +287,18 @@ export default function Productos({ config, showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!sku.trim() || !descripcion.trim() || !marca.trim()) {
-      showToast('Por favor complete los campos obligatorios (SKU, Descripción, Marca)', 'error');
+    if (!sku.trim() || !descripcion.trim()) {
+      showToast('Por favor complete los campos obligatorios (SKU, Descripción)', 'error');
       return;
     }
 
     const payload = {
       sku: sku.trim(),
       descripcion: descripcion.trim(),
-      marca: marca.trim(),
-      categoria,
-      presentacion,
-      unidad_medida: unidadMedida,
+      marca: marca ? marca.trim() : 'Genérico',
+      categoria: categoria || config.categorias?.[0] || 'Analgésicos',
+      presentacion: presentacion || 'Otro',
+      unidad_medida: unidadMedida || 'pz',
       costo: parseFloat(costo) || 0,
       precio_venta: parseFloat(precioVenta) || 0,
       fecha_actualizacion_precio: new Date().toISOString()
@@ -437,45 +437,7 @@ export default function Productos({ config, showToast }) {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Laboratorio / Marca *</label>
-              <input
-                type="text"
-                placeholder="Ej. Bayer / Genérico"
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                value={marca}
-                onChange={(e) => setMarca(e.target.value)}
-                required
-              />
-            </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Categoría</label>
-                <select
-                  className="w-full px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs bg-white"
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                >
-                  {config.categorias?.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Presentación</label>
-                <select
-                  className="w-full px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs bg-white"
-                  value={presentacion}
-                  onChange={(e) => setPresentacion(e.target.value)}
-                >
-                  {presentacionesSugeridas.map((pres) => (
-                    <option key={pres} value={pres}>{pres}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Unidad de Medida</label>
@@ -634,9 +596,6 @@ export default function Productos({ config, showToast }) {
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500 tracking-wider">
                   <tr>
                     <th className="px-6 py-3.5">SKU / Descripción</th>
-                    <th className="px-4 py-3.5">Laboratorio</th>
-                    <th className="px-4 py-3.5">Categoría</th>
-                    <th className="px-4 py-3.5">Presentación</th>
                     <th className="px-4 py-3.5 text-right">Costo</th>
                     <th className="px-4 py-3.5 text-right">Precio Venta</th>
                     <th className="px-4 py-3.5 text-center">Margen</th>
@@ -647,14 +606,14 @@ export default function Productos({ config, showToast }) {
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan="9" className="px-6 py-10 text-center text-slate-400">
+                      <td colSpan="6" className="px-6 py-10 text-center text-slate-400">
                         <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                         Buscando productos en catálogo...
                       </td>
                     </tr>
                   ) : productos.length === 0 ? (
                     <tr>
-                      <td colSpan="9" className="px-6 py-12 text-center text-slate-400">
+                      <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
                         Ningún producto encontrado en esta categoría o búsqueda.
                       </td>
                     </tr>
@@ -676,16 +635,7 @@ export default function Productos({ config, showToast }) {
                         <tr key={prod.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-6 py-4">
                             <div className="font-semibold text-slate-800">{prod.descripcion}</div>
-                            <div className="text-xs font-mono text-slate-400">{prod.sku}</div>
-                          </td>
-                          <td className="px-4 py-4 text-xs font-medium text-slate-700">{prod.marca}</td>
-                          <td className="px-4 py-4">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                              {prod.categoria}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-xs text-slate-500">
-                            {prod.presentacion} <span className="text-slate-400">({prod.unidad_medida})</span>
+                            <div className="text-xs font-mono text-slate-400">{prod.sku} <span className="text-slate-400">({prod.unidad_medida})</span></div>
                           </td>
                           <td className="px-4 py-4 text-right font-mono text-xs font-medium">${c.toFixed(2)}</td>
                           <td className="px-4 py-4 text-right font-mono text-sm font-semibold text-slate-900">${v.toFixed(2)}</td>

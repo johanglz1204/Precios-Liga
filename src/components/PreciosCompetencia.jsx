@@ -299,7 +299,7 @@ export default function PreciosCompetencia({ config, showToast }) {
                 >
                   <div>
                     <p className="font-semibold text-slate-800">{prod.descripcion}</p>
-                    <p className="text-xs text-slate-500">Marca: {prod.marca} • Cat: {prod.categoria}</p>
+                    <p className="text-xs text-slate-500">Unidad: {prod.unidad_medida}</p>
                   </div>
                   <div className="text-right">
                     <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-500">{prod.sku}</span>
@@ -319,12 +319,9 @@ export default function PreciosCompetencia({ config, showToast }) {
           {/* Ficha técnica del producto seleccionado */}
           <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-xl text-white shadow-md flex flex-col md:flex-row justify-between gap-4">
             <div>
-              <span className="bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                {selectedProduct.categoria}
-              </span>
-              <h2 className="text-xl font-bold mt-2">{selectedProduct.descripcion}</h2>
+              <h2 className="text-xl font-bold">{selectedProduct.descripcion}</h2>
               <p className="text-slate-400 text-xs mt-1">
-                Laboratorio/Marca: <span className="text-white font-medium">{selectedProduct.marca}</span> | Presentación: <span className="text-white font-medium">{selectedProduct.presentacion} ({selectedProduct.unidad_medida})</span> | SKU: <span className="text-white font-mono">{selectedProduct.sku}</span>
+                SKU: <span className="text-white font-mono">{selectedProduct.sku}</span> | Unidad: <span className="text-white font-medium">{selectedProduct.unidad_medida || 'pz'}</span>
               </p>
             </div>
             
