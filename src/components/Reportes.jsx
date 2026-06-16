@@ -236,9 +236,6 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
       const headers = [
         'SKU/Barras',
         'Descripcion',
-        'Laboratorio',
-        'Categoria',
-        'Presentacion',
         'Costo Compra',
         'Nuestro Precio Venta',
         'Margen Propio %',
@@ -287,9 +284,6 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
         const row = [
           `"${prod.sku}"`,
           `"${prod.descripcion.replace(/"/g, '""')}"`,
-          `"${prod.marca.replace(/"/g, '""')}"`,
-          `"${prod.categoria}"`,
-          `"${prod.presentacion}"`,
           prod.costo.toFixed(2),
           prod.precio_venta.toFixed(2),
           margenPropio,
