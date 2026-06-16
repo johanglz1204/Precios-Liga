@@ -222,8 +222,13 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
 
       if (capError) throw capError;
 
-      if (prods.length === 0) {
-        showToast('No hay productos en el catálogo para exportar.', 'error');
+      // Filtrar sólo productos que tengan registrados precios de la competencia para el mes seleccionado
+      const targetProducts = prods.filter(prod => 
+        captures.some(c => c.producto_id === prod.id)
+      );
+
+      if (targetProducts.length === 0) {
+        showToast('No hay productos con precios de competencia registrados en este mes.', 'warning');
         return;
       }
 
@@ -245,7 +250,7 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
 
       const csvRows = [headers.join(',')];
 
-      prods.forEach(prod => {
+      targetProducts.forEach(prod => {
         // Encontrar precios de competidores para este producto
         const pComps = captures.filter(c => c.producto_id === prod.id);
         
