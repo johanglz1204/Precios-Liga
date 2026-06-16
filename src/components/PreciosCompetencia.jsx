@@ -299,7 +299,6 @@ export default function PreciosCompetencia({ config, showToast }) {
                 >
                   <div>
                     <p className="font-semibold text-slate-800">{prod.descripcion}</p>
-                    <p className="text-xs text-slate-500">Unidad: {prod.unidad_medida}</p>
                   </div>
                   <div className="text-right">
                     <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-500">{prod.sku}</span>
@@ -321,7 +320,7 @@ export default function PreciosCompetencia({ config, showToast }) {
             <div>
               <h2 className="text-xl font-bold">{selectedProduct.descripcion}</h2>
               <p className="text-slate-400 text-xs mt-1">
-                SKU: <span className="text-white font-mono">{selectedProduct.sku}</span> | Unidad: <span className="text-white font-medium">{selectedProduct.unidad_medida || 'pz'}</span>
+                SKU: <span className="text-white font-mono">{selectedProduct.sku}</span>
               </p>
             </div>
             

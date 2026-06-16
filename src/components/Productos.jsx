@@ -439,18 +439,7 @@ export default function Productos({ config, showToast }) {
 
 
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Unidad de Medida</label>
-              <select
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-white"
-                value={unidadMedida}
-                onChange={(e) => setUnidadMedida(e.target.value)}
-              >
-                {unidadesSugeridas.map((uni) => (
-                  <option key={uni} value={uni}>{uni}</option>
-                ))}
-              </select>
-            </div>
+
 
             {/* SECCIÓN PRECIOS PROPIOS */}
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
@@ -635,7 +624,7 @@ export default function Productos({ config, showToast }) {
                         <tr key={prod.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-6 py-4">
                             <div className="font-semibold text-slate-800">{prod.descripcion}</div>
-                            <div className="text-xs font-mono text-slate-400">{prod.sku} <span className="text-slate-400">({prod.unidad_medida})</span></div>
+                            <div className="text-xs font-mono text-slate-400">{prod.sku}</div>
                           </td>
                           <td className="px-4 py-4 text-right font-mono text-xs font-medium">${c.toFixed(2)}</td>
                           <td className="px-4 py-4 text-right font-mono text-sm font-semibold text-slate-900">${v.toFixed(2)}</td>
