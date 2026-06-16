@@ -244,6 +244,7 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
         'Margen Propio %',
         ...comps.map(c => `Precio ${c.nombre}`),
         'Precio Minimo Competencia',
+        'Competidor con Precio Minimo',
         'Diferencia vs Minimo %'
       ];
 
@@ -262,6 +263,17 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
         // Min y margen
         const preciosValidos = preciosComps.filter(p => p !== '');
         const minComp = preciosValidos.length > 0 ? Math.min(...preciosValidos) : '';
+        
+        let minCompNombre = '';
+        if (minComp !== '') {
+          const matchingComps = [];
+          preciosComps.forEach((p, idx) => {
+            if (p === minComp) {
+              matchingComps.push(comps[idx].nombre);
+            }
+          });
+          minCompNombre = matchingComps.join(' / ');
+        }
         
         let diffPct = '';
         if (minComp !== '' && prod.precio_venta > 0) {
@@ -283,6 +295,7 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
           margenPropio,
           ...preciosComps.map(p => (p !== '' ? p.toFixed(2) : '')),
           minComp !== '' ? minComp.toFixed(2) : '',
+          `"${minCompNombre}"`,
           diffPct
         ];
 
