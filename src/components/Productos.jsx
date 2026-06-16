@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, Plus, Edit2, Trash2, Save, X, ChevronLeft, ChevronRight, Calculator, Calendar } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Save, X, ChevronLeft, ChevronRight, Calculator, Calendar, FileSpreadsheet, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function Productos({ config, showToast }) {
   const [productos, setProductos] = useState([]);
@@ -14,6 +15,116 @@ export default function Productos({ config, showToast }) {
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const autocompleteRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [importing, setImporting] = useState(false);
+
+  const downloadTemplate = () => {
+    try {
+      const templateData = [
+        {
+          'Codigo': '7501002003001',
+          'Descripcion': 'Paracetamol 500mg 10 Tabs',
+          'CNC': 10.50,
+          'PMSTDR': 15.00
+        },
+        {
+          'Codigo': '7501002003002',
+          'Descripcion': 'Ibuprofeno 400mg 10 Caps',
+          'CNC': 12.00,
+          'PMSTDR': 18.00
+        }
+      ];
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Productos');
+      XLSX.writeFile(workbook, 'plantilla_productos.xlsx');
+      showToast('Plantilla descargada con éxito', 'success');
+    } catch (err) {
+      showToast('Error al descargar plantilla: ' + err.message, 'error');
+    }
+  };
+
+  const handleExcelUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (!jsonData || jsonData.length === 0) {
+          showToast('El archivo de Excel está vacío.', 'error');
+          setImporting(false);
+          return;
+        }
+
+        const normalizedRows = jsonData.map(row => {
+          const normalized = {};
+          Object.keys(row).forEach(key => {
+            const cleanKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            if (cleanKey === 'codigo') {
+              normalized.sku = String(row[key]).trim();
+            } else if (cleanKey === 'descripcion') {
+              normalized.descripcion = String(row[key]).trim();
+            } else if (cleanKey === 'cnc') {
+              normalized.costo = parseFloat(row[key]);
+            } else if (cleanKey === 'pmstdr') {
+              normalized.precio_venta = parseFloat(row[key]);
+            }
+          });
+          return normalized;
+        });
+
+        const validRows = normalizedRows.filter(row => row.sku && row.descripcion);
+
+        if (validRows.length === 0) {
+          showToast('No se encontraron productos válidos. Asegúrate de incluir las columnas: Codigo, Descripcion, CNC, PMSTDR.', 'error');
+          setImporting(false);
+          return;
+        }
+
+        const payloads = validRows.map(row => ({
+          sku: row.sku,
+          descripcion: row.descripcion,
+          marca: 'Genérico',
+          categoria: config.categorias?.[0] || 'Analgésicos',
+          presentacion: 'Otro',
+          unidad_medida: 'pz',
+          costo: isNaN(row.costo) ? 0 : row.costo,
+          precio_venta: isNaN(row.precio_venta) ? 0 : row.precio_venta,
+          fecha_actualizacion_precio: new Date().toISOString()
+        }));
+
+        const { error } = await supabase
+          .from('productos')
+          .upsert(payloads, { onConflict: 'sku' });
+
+        if (error) throw error;
+
+        showToast(`Se importaron/actualizaron ${payloads.length} productos correctamente.`, 'success');
+        fetchProductos();
+      } catch (err) {
+        showToast('Error al procesar el Excel: ' + err.message, 'error');
+      } finally {
+        setImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    
+    reader.onerror = () => {
+      showToast('Error al leer el archivo.', 'error');
+      setImporting(false);
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
 
   // Filtros de tabla
   const [filterCategoria, setFilterCategoria] = useState('');
@@ -253,12 +364,44 @@ export default function Productos({ config, showToast }) {
     <div className="space-y-6">
       
       {/* Encabezado */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Catálogo de Productos y Precios Propios</h1>
           <p className="text-slate-500 text-sm">Gestiona el catálogo de medicamentos, sus especificaciones y tus márgenes de ganancia.</p>
         </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleExcelUpload}
+            accept=".xlsx, .xls"
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-lg text-sm transition-colors border border-slate-300 flex items-center space-x-1"
+            title="Descargar plantilla de Excel"
+          >
+            <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+            <span>Descargar Plantilla</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm text-sm transition-colors flex items-center space-x-2 disabled:opacity-50"
+          >
+            {importing ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            <span>Cargar Excel</span>
+          </button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         
