@@ -197,24 +197,7 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
 
     setExporting(true);
     try {
-      // 1. Obtener productos
-      const { data: prods, error: prodsError } = await supabase
-        .from('productos')
-        .select('*')
-        .order('descripcion', { ascending: true });
-
-      if (prodsError) throw prodsError;
-
-      // 2. Obtener competidores activos
-      const { data: comps, error: compsError } = await supabase
-        .from('competidores')
-        .select('*')
-        .eq('activo', true)
-        .order('nombre', { ascending: true });
-
-      if (compsError) throw compsError;
-
-      // 3. Obtener precios de competencia de ese mes
+      // 1. Obtener precios de competencia de ese mes
       const { data: captures, error: capError } = await supabase
         .from('precios_competencia')
         .select('*')
@@ -222,15 +205,31 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
 
       if (capError) throw capError;
 
-      // Filtrar sólo productos que tengan registrados precios de la competencia para el mes seleccionado
-      const targetProducts = prods.filter(prod => 
-        captures.some(c => c.producto_id === prod.id)
-      );
-
-      if (targetProducts.length === 0) {
+      if (!captures || captures.length === 0) {
         showToast('No hay productos con precios de competencia registrados en este mes.', 'warning');
         return;
       }
+
+      // Obtener los IDs únicos de productos que tienen captura en este mes
+      const productIds = [...new Set(captures.map(c => c.producto_id))];
+
+      // 2. Obtener sólo esos productos de la base de datos (evita el límite de 1000 registros de Supabase)
+      const { data: targetProducts, error: prodsError } = await supabase
+        .from('productos')
+        .select('*')
+        .in('id', productIds)
+        .order('descripcion', { ascending: true });
+
+      if (prodsError) throw prodsError;
+
+      // 3. Obtener competidores activos
+      const { data: comps, error: compsError } = await supabase
+        .from('competidores')
+        .select('*')
+        .eq('activo', true)
+        .order('nombre', { ascending: true });
+
+      if (compsError) throw compsError;
 
       // 4. Armar contenido CSV
       // Encabezados
