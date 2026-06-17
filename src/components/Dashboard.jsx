@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShieldCheck, AlertTriangle, XOctagon, Sparkles, Filter, RefreshCw, Calendar, ArrowRight, TrendingDown, Check } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, XOctagon, Sparkles, Filter, RefreshCw, Calendar, ArrowRight, TrendingDown, Check, Clock, User, FileText, X, Search } from 'lucide-react';
 
 export default function Dashboard({ config, showToast }) {
   const [competidores, setCompetidores] = useState([]);
@@ -18,9 +18,69 @@ export default function Dashboard({ config, showToast }) {
   // Estado para la sugerencia interactiva (modificar precio propio rápido)
   const [updatingProductId, setUpdatingProductId] = useState(null);
 
+  // Estado para modal de historial de cambios
+  const [historyModal, setHistoryModal] = useState({
+    isOpen: false,
+    productName: '',
+    competitorName: '',
+    productId: null,
+    competitorId: null,
+    loading: false,
+    records: []
+  });
+
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     fetchDashboardData();
   }, [filterCategoria, filterCompetidor, filterFechaInicio, filterFechaFin]);
+
+  const handleShowHistory = async (product, competitor) => {
+    setHistoryModal({
+      isOpen: true,
+      productName: product.descripcion,
+      competitorName: competitor.nombre,
+      productId: product.id,
+      competitorId: competitor.id,
+      loading: true,
+      records: []
+    });
+
+    try {
+      // Obtener el mes actual en formato YYYY-MM
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const currentMonthStr = `${year}-${month}`;
+
+      const { data, error } = await supabase
+        .from('historial_precios_competencia')
+        .select('*')
+        .eq('producto_id', product.id)
+        .eq('competidor_id', competitor.id)
+        .eq('mes_calendario', currentMonthStr)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Fallo al leer historial de precios:', error.message);
+        // Fallback a precios_competencia por si no tienen la tabla de historial creada
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('precios_competencia')
+          .select('*')
+          .eq('producto_id', product.id)
+          .eq('competidor_id', competitor.id)
+          .eq('mes_calendario', currentMonthStr);
+
+        if (fallbackError) throw fallbackError;
+        setHistoryModal(prev => ({ ...prev, loading: false, records: fallbackData || [] }));
+      } else {
+        setHistoryModal(prev => ({ ...prev, loading: false, records: data || [] }));
+      }
+    } catch (err) {
+      showToast('Error al cargar historial: ' + err.message, 'error');
+      setHistoryModal(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -138,6 +198,16 @@ export default function Dashboard({ config, showToast }) {
 
   // Aplicar filtros adicionales en cliente (ej. Filtro por Competidor en listado, o Solo Alertas)
   const filteredData = processedData.filter(item => {
+    // Filtro por buscador
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchSku = item.sku?.toLowerCase().includes(query);
+      const matchDesc = item.descripcion?.toLowerCase().includes(query);
+      const matchMarca = item.marca?.toLowerCase().includes(query);
+      if (!matchSku && !matchDesc && !matchMarca) {
+        return false;
+      }
+    }
     // Si se filtra por competidor, solo mostrar productos que tengan precio registrado para ese competidor
     if (filterCompetidor && item.preciosPorCompetidor[filterCompetidor] === null) {
       return false;
@@ -148,6 +218,8 @@ export default function Dashboard({ config, showToast }) {
     }
     return true;
   });
+
+  const displayedData = filteredData.slice(0, 100);
 
   // Aplicar sugerencia y actualizar en Supabase
   const handleApplySuggestion = async (productId, precioRecomendado) => {
@@ -196,9 +268,23 @@ export default function Dashboard({ config, showToast }) {
 
       {/* Contenedor de Filtros */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center space-x-1 text-slate-700 font-semibold text-sm border-b border-slate-100 pb-2">
-          <Filter className="h-4.5 w-4.5 text-emerald-600" />
-          <span>Filtros del Panel</span>
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div className="flex items-center space-x-1 text-slate-700 font-semibold text-sm">
+            <Filter className="h-4.5 w-4.5 text-emerald-600" />
+            <span>Filtros del Panel</span>
+          </div>
+        </div>
+
+        {/* Buscador de Producto */}
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por SKU, descripción o marca..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-medium"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -312,18 +398,26 @@ export default function Dashboard({ config, showToast }) {
             <p className="text-xl font-bold font-mono">
               {processedData.filter(p => p.colorAlerta === 'rojo').length}
             </p>
-          </div>
         </div>
       </div>
 
       {/* Tabla Comparativa Principal */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h3 className="font-bold text-slate-800 text-sm">Monitoreo de Precios</h3>
+          <span className="text-xs text-slate-500 font-medium">
+            {filteredData.length > 100 
+              ? `Mostrando primeros 100 de ${filteredData.length} productos coincidentes` 
+              : `Mostrando ${filteredData.length} productos`}
+          </span>
+        </div>
+
         {loading ? (
           <div className="py-20 text-center text-slate-400">
             <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
             Analizando y cruzando precios del catálogo...
           </div>
-        ) : filteredData.length === 0 ? (
+        ) : displayedData.length === 0 ? (
           <div className="py-16 text-center text-slate-400">
             No se encontraron productos coincidentes con los filtros seleccionados.
           </div>
@@ -346,14 +440,14 @@ export default function Dashboard({ config, showToast }) {
                       </div>
                     </th>
                   ))}
-
+ 
                   <th className="px-4 py-4 text-right border-l-2 border-slate-200">Mín. Competencia</th>
                   <th className="px-4 py-4 text-right">Diferencia</th>
                   <th className="px-6 py-4 text-center min-w-[150px]">Sugerencia</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredData.map((prod) => {
+                {displayedData.map((prod) => {
                   const c = prod.costo || 0;
                   const v = prod.precio_venta || 0;
                   const marg = v > 0 ? (((v - c) / v) * 100).toFixed(1) : '0.0';
@@ -401,9 +495,17 @@ export default function Dashboard({ config, showToast }) {
                       {competidores.map(comp => {
                         const precioComp = prod.preciosPorCompetidor[comp.id];
                         return (
-                          <td key={comp.id} className="px-4 py-3.5 text-center font-mono border-l border-slate-100">
+                          <td 
+                            key={comp.id} 
+                            className={`px-4 py-3.5 text-center font-mono border-l border-slate-100 select-none ${precioComp !== null ? 'cursor-pointer hover:bg-slate-50 group transition-all' : ''}`}
+                            onClick={() => precioComp !== null && handleShowHistory(prod, comp)}
+                            title={precioComp !== null ? `Ver historial de cambios para ${comp.nombre}` : undefined}
+                          >
                             {precioComp !== null ? (
-                              <span className="font-semibold text-slate-800">${precioComp.toFixed(2)}</span>
+                              <div className="flex flex-col items-center justify-center">
+                                <span className="font-semibold text-slate-800 group-hover:text-emerald-600 transition-colors">${precioComp.toFixed(2)}</span>
+                                <span className="text-[8px] text-slate-400 group-hover:text-emerald-500 font-normal underline decoration-dotted mt-0.5">Historial</span>
+                              </div>
                             ) : (
                               <span className="text-[10px] text-slate-300 font-normal">--</span>
                             )}
@@ -462,6 +564,110 @@ export default function Dashboard({ config, showToast }) {
           </div>
         )}
       </div>
+
+      {/* MODAL DE HISTORIAL DE PRECIOS */}
+      {historyModal.isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh] text-slate-800">
+            
+            {/* Cabecera del Modal */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <Clock className="h-5.5 w-5.5 text-emerald-100" />
+                <div>
+                  <h3 className="font-bold text-base">Historial de Precios en el Mes</h3>
+                  <p className="text-emerald-100 text-xs mt-0.5">{historyModal.competitorName}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setHistoryModal(prev => ({ ...prev, isOpen: false }))}
+                className="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-lg transition-all"
+              >
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Medicamento</p>
+                  <p className="text-sm font-bold text-slate-800">{historyModal.productName}</p>
+                </div>
+                <div className="sm:text-right">
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Periodo</p>
+                  <p className="text-xs font-semibold text-slate-700">
+                    {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+
+              {historyModal.loading ? (
+                <div className="py-12 text-center text-slate-400">
+                  <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  Buscando historial de precios...
+                </div>
+              ) : historyModal.records.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+                  No se encontraron registros de cambios para este producto este mes.
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                      <tr>
+                        <th className="px-4 py-3">Fecha Captura</th>
+                        <th className="px-4 py-3 text-right">Precio ($)</th>
+                        <th className="px-4 py-3">Quién Registró</th>
+                        <th className="px-4 py-3">Notas</th>
+                        <th className="px-4 py-3 text-right">Creado el</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                      {historyModal.records.map((reg) => (
+                        <tr key={reg.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 font-semibold text-slate-700">
+                            {reg.fecha_captura}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold font-mono text-emerald-600 text-xs">
+                            ${reg.precio.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 flex items-center space-x-1 mt-0.5">
+                            <User className="h-3 w-3 text-slate-400" />
+                            <span>{reg.empleado}</span>
+                          </td>
+                          <td className="px-4 py-3 italic text-slate-500 font-normal">
+                            {reg.notas ? (
+                              <div className="flex items-center space-x-1 max-w-[150px] truncate" title={reg.notas}>
+                                <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                                <span className="truncate">{reg.notas}</span>
+                              </div>
+                            ) : '--'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-[10px] text-slate-400 font-mono">
+                            {new Date(reg.created_at).toLocaleDateString('es-ES')} {new Date(reg.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Pie del Modal */}
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-150 flex justify-end">
+              <button
+                onClick={() => setHistoryModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

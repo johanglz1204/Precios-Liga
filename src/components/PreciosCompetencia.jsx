@@ -233,6 +233,15 @@ export default function PreciosCompetencia({ config, showToast }) {
 
         if (insertError) throw insertError;
         
+        // Registrar en historial si existe la tabla
+        try {
+          await supabase
+            .from('historial_precios_competencia')
+            .insert([payload]);
+        } catch (histErr) {
+          console.warn('Error al guardar en el historial:', histErr.message);
+        }
+        
         showToast(`Precio guardado para ${comp.nombre}`, 'success');
         fetchPreciosProducto(selectedProduct.id);
       }
@@ -249,6 +258,15 @@ export default function PreciosCompetencia({ config, showToast }) {
         .eq('id', duplicateModal.existenteId);
 
       if (updateError) throw updateError;
+
+      // Registrar en historial si existe la tabla
+      try {
+        await supabase
+          .from('historial_precios_competencia')
+          .insert([duplicateModal.payload]);
+      } catch (histErr) {
+        console.warn('Error al guardar en el historial (overwrite):', histErr.message);
+      }
 
       showToast(`Precio actualizado para ${duplicateModal.competidorNombre}`, 'success');
       setDuplicateModal({ isOpen: false, competidorNombre: '', fechaExistente: '', competidorId: '', payload: null, existenteId: null });

@@ -91,3 +91,19 @@ ALTER TABLE configuracion DISABLE ROW LEVEL SECURITY;
 ALTER TABLE productos DISABLE ROW LEVEL SECURITY;
 ALTER TABLE competidores DISABLE ROW LEVEL SECURITY;
 ALTER TABLE precios_competencia DISABLE ROW LEVEL SECURITY;
+
+-- 5. TABLA DE HISTORIAL DE CAMBIOS DE PRECIOS DE COMPETENCIA
+-- Almacena todas las modificaciones de precios de competencia para auditoría e historial.
+CREATE TABLE IF NOT EXISTS historial_precios_competencia (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    producto_id UUID NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
+    competidor_id UUID NOT NULL REFERENCES competidores(id) ON DELETE CASCADE,
+    precio NUMERIC NOT NULL,
+    fecha_captura DATE NOT NULL DEFAULT CURRENT_DATE,
+    empleado TEXT NOT NULL,
+    notas TEXT,
+    mes_calendario TEXT NOT NULL, -- Formato 'YYYY-MM'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+ALTER TABLE historial_precios_competencia DISABLE ROW LEVEL SECURITY;
