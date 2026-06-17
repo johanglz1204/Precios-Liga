@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShieldCheck, AlertTriangle, XOctagon, Sparkles, Filter, RefreshCw, Calendar, ArrowRight, TrendingDown, Check, Clock, User, FileText, X, Search } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, XOctagon, Sparkles, Filter, RefreshCw, Calendar, Clock, User, FileText, X, Search } from 'lucide-react';
 
 export default function Dashboard({ config, showToast }) {
   const [competidores, setCompetidores] = useState([]);
@@ -31,9 +31,6 @@ export default function Dashboard({ config, showToast }) {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [filterCategoria, filterCompetidor, filterFechaInicio, filterFechaFin]);
 
   const handleShowHistory = async (product, competitor) => {
     setHistoryModal({
@@ -134,6 +131,12 @@ export default function Dashboard({ config, showToast }) {
       setLoading(false);
     }
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchDashboardData();
+  }, [filterCategoria, filterCompetidor, filterFechaInicio, filterFechaFin]);
 
   // Construir la matriz de datos en memoria
   const processedData = productos.map(prod => {
