@@ -398,6 +398,7 @@ export default function Dashboard({ config, showToast }) {
             <p className="text-xl font-bold font-mono">
               {processedData.filter(p => p.colorAlerta === 'rojo').length}
             </p>
+          </div>
         </div>
       </div>
 
