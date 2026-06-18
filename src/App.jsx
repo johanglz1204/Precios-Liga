@@ -58,32 +58,46 @@ export default function App() {
       return;
     }
 
-    // Obtener sesión actual (restaurada del localStorage)
-    supabase.auth.getSession().then(({ data }) => {
-      const currentSession = data?.session ?? null;
-      setSession(currentSession);
-      // Definir pestaña inicial según rol
-      if (currentSession?.user?.email === ADMIN_EMAIL) {
-        setActiveTab('dashboard');
-      } else {
-        setActiveTab('precios-competencia');
-      }
-    }).catch(() => {
-      setSession(null);
-    });
+    let subscription = null;
 
-    // Suscribirse a cambios futuros (login / logout)
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession ?? null);
-      if (newSession?.user?.email === ADMIN_EMAIL) {
-        setActiveTab('dashboard');
-      } else {
-        setActiveTab('precios-competencia');
+    const initAuth = async () => {
+      try {
+        // Obtener sesión actual (restaurada del localStorage)
+        const { data } = await supabase.auth.getSession();
+        const currentSession = data?.session ?? null;
+        setSession(currentSession);
+        if (currentSession?.user?.email === ADMIN_EMAIL) {
+          setActiveTab('dashboard');
+        } else {
+          setActiveTab('precios-competencia');
+        }
+      } catch (err) {
+        console.error('Error al obtener sesión:', err);
+        setSession(null);
       }
-    });
+
+      try {
+        // Suscribirse a cambios futuros (login / logout)
+        const result = supabase.auth.onAuthStateChange((_event, newSession) => {
+          setSession(newSession ?? null);
+          if (newSession?.user?.email === ADMIN_EMAIL) {
+            setActiveTab('dashboard');
+          } else {
+            setActiveTab('precios-competencia');
+          }
+        });
+        subscription = result?.data?.subscription ?? null;
+      } catch (err) {
+        console.error('Error al suscribirse a auth:', err);
+      }
+    };
+
+    initAuth();
 
     return () => {
-      authListener?.subscription?.unsubscribe();
+      try {
+        subscription?.unsubscribe();
+      } catch (e) { /* silenciar */ }
     };
   }, [supabaseConnected]);
 

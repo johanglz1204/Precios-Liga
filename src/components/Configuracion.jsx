@@ -5,7 +5,6 @@ import { Save, Plus, Trash2, Database, Download, FileJson, LogOut, CheckCircle, 
 export default function Configuracion({ config, onConfigUpdated, showToast }) {
   const [nombreFarmacia, setNombreFarmacia] = useState('');
   const [margenMinimo, setMargenMinimo] = useState(20);
-  const [adminPin, setAdminPin] = useState('729490');
   const [categorias, setCategorias] = useState([]);
   const [empleados, setEmpleados] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +19,6 @@ export default function Configuracion({ config, onConfigUpdated, showToast }) {
     if (config) {
       setNombreFarmacia(config.nombre_farmacia || '');
       setMargenMinimo(config.margen_minimo || 20);
-      setAdminPin(config.admin_pin || '729490');
       setCategorias(config.categorias || []);
       setEmpleados(config.empleados || []);
     }
@@ -41,17 +39,11 @@ export default function Configuracion({ config, onConfigUpdated, showToast }) {
         .update({
           nombre_farmacia: nombreFarmacia.trim(),
           margen_minimo: parseFloat(margenMinimo) || 0,
-          admin_pin: adminPin.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', 1);
 
-      if (error) {
-        if (error.code === 'PGRST204') {
-          throw new Error('La columna "admin_pin" no existe en la base de datos. Por favor, corre el script schema.sql en tu panel de Supabase para actualizar la tabla.');
-        }
-        throw error;
-      }
+      if (error) throw error;
       showToast('Configuración general actualizada', 'success');
       onConfigUpdated(); // Recargar config global en App.jsx
     } catch (err) {
@@ -237,19 +229,7 @@ export default function Configuracion({ config, onConfigUpdated, showToast }) {
               </p>
             </div>
 
-            <div className="pt-2 border-t border-slate-100">
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">PIN de Administrador</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-mono tracking-widest"
-                value={adminPin}
-                onChange={(e) => setAdminPin(e.target.value)}
-                required
-              />
-              <p className="text-[10px] text-slate-400 italic mt-1">
-                Este código se solicitará para desbloquear el modo administrador.
-              </p>
-            </div>
+
 
             <button
               type="submit"
