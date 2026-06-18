@@ -30,6 +30,8 @@ export default function Dashboard({ config, showToast }) {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 100;
 
 
   const handleShowHistory = async (product, competitor) => {
@@ -225,7 +227,9 @@ export default function Dashboard({ config, showToast }) {
     return true;
   });
 
-  const displayedData = filteredData.slice(0, 100);
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const displayedData = filteredData.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Aplicar sugerencia y actualizar en Supabase
   const handleApplySuggestion = async (productId, precioRecomendado) => {
@@ -289,7 +293,7 @@ export default function Dashboard({ config, showToast }) {
             placeholder="Buscar por SKU, descripción o marca..."
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-medium"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
           />
         </div>
 
@@ -300,7 +304,7 @@ export default function Dashboard({ config, showToast }) {
             <select
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               value={filterCategoria}
-              onChange={(e) => setFilterCategoria(e.target.value)}
+              onChange={(e) => { setFilterCategoria(e.target.value); setCurrentPage(1); }}
             >
               <option value="">Todas</option>
               {config.categorias?.map((cat) => (
@@ -315,7 +319,7 @@ export default function Dashboard({ config, showToast }) {
             <select
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               value={filterCompetidor}
-              onChange={(e) => setFilterCompetidor(e.target.value)}
+              onChange={(e) => { setFilterCompetidor(e.target.value); setCurrentPage(1); }}
             >
               <option value="">Todos los competidores</option>
               {competidores.map((comp) => (
@@ -413,9 +417,9 @@ export default function Dashboard({ config, showToast }) {
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h3 className="font-bold text-slate-800 text-sm">Monitoreo de Precios</h3>
           <span className="text-xs text-slate-500 font-medium">
-            {filteredData.length > 100 
-              ? `Mostrando primeros 100 de ${filteredData.length} productos coincidentes` 
-              : `Mostrando ${filteredData.length} productos`}
+            {filteredData.length > 0
+              ? `Página ${safePage} de ${totalPages} — ${filteredData.length} productos encontrados`
+              : 'Sin productos'}
           </span>
         </div>
 
@@ -568,6 +572,70 @@ export default function Dashboard({ config, showToast }) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Controles de Paginación */}
+        {!loading && filteredData.length > PAGE_SIZE && (
+          <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
+            <span className="text-xs text-slate-500">
+              Mostrando <span className="font-bold text-slate-700">{(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredData.length)}</span> de <span className="font-bold text-slate-700">{filteredData.length}</span> productos
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={safePage === 1}
+                className="px-2 py-1 text-xs rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+              >
+                «
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="px-3 py-1 text-xs rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-semibold"
+              >
+                ‹ Anterior
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  p === '...' ? (
+                    <span key={`ellipsis-${i}`} className="px-1 text-xs text-slate-400">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`px-2.5 py-1 text-xs rounded border font-semibold transition-colors ${
+                        p === safePage
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )
+              }
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="px-3 py-1 text-xs rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-semibold"
+              >
+                Siguiente ›
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={safePage === totalPages}
+                className="px-2 py-1 text-xs rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+              >
+                »
+              </button>
+            </div>
           </div>
         )}
       </div>
