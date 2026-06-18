@@ -92,36 +92,39 @@ export default function Dashboard({ config, showToast }) {
       if (compsError) throw compsError;
       setCompetidores(comps || []);
 
-      // 2. Cargar todos los productos
-      let prodQuery = supabase
-        .from('productos')
-        .select('*')
-        .order('descripcion', { ascending: true });
+      // Helper para traer TODOS los registros paginando de 1000 en 1000
+      const fetchAll = async (table, filters = []) => {
+        let allRows = [];
+        let page = 0;
+        const PAGE_SIZE = 1000;
+        while (true) {
+          let query = supabase
+            .from(table)
+            .select('*')
+            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+          filters.forEach(({ method, args }) => {
+            query = query[method](...args);
+          });
+          const { data, error } = await query;
+          if (error) throw error;
+          allRows = allRows.concat(data || []);
+          if (!data || data.length < PAGE_SIZE) break;
+          page++;
+        }
+        return allRows;
+      };
 
-      if (filterCategoria) {
-        prodQuery = prodQuery.eq('categoria', filterCategoria);
-      }
+      // 2. Cargar todos los productos (paginado)
+      const prodFilters = [['order', ['descripcion', { ascending: true }]]].map(([m, a]) => ({ method: m, args: a }));
+      if (filterCategoria) prodFilters.push({ method: 'eq', args: ['categoria', filterCategoria] });
+      const prods = await fetchAll('productos', prodFilters);
 
-      const { data: prods, error: prodsError } = await prodQuery;
-      if (prodsError) throw prodsError;
-
-      // 3. Cargar precios de competencia
-      let preciosQuery = supabase
-        .from('precios_competencia')
-        .select('*');
-
-      if (filterFechaInicio) {
-        preciosQuery = preciosQuery.gte('fecha_captura', filterFechaInicio);
-      }
-      if (filterFechaFin) {
-        preciosQuery = preciosQuery.lte('fecha_captura', filterFechaFin);
-      }
-      if (filterCompetidor) {
-        preciosQuery = preciosQuery.eq('competidor_id', filterCompetidor);
-      }
-
-      const { data: precs, error: precsError } = await preciosQuery;
-      if (precsError) throw precsError;
+      // 3. Cargar todos los precios de competencia (paginado)
+      const precFilters = [];
+      if (filterFechaInicio) precFilters.push({ method: 'gte', args: ['fecha_captura', filterFechaInicio] });
+      if (filterFechaFin) precFilters.push({ method: 'lte', args: ['fecha_captura', filterFechaFin] });
+      if (filterCompetidor) precFilters.push({ method: 'eq', args: ['competidor_id', filterCompetidor] });
+      const precs = await fetchAll('precios_competencia', precFilters);
 
       setProductos(prods || []);
       setPreciosCompetencia(precs || []);
