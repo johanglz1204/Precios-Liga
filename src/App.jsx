@@ -17,7 +17,10 @@ import {
   AlertTriangle, 
   Database,
   RefreshCw,
-  Bell
+  Bell,
+  Lock,
+  Unlock,
+  X
 } from 'lucide-react';
 
 export default function App() {
@@ -27,7 +30,13 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   
   // Enrutamiento SPA
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('precios-competencia'); // Inicia en captura
+  
+  // Sistema de Roles y PIN
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
   
   // Producto seleccionado para pre-cargar en Captura de Precios
   const [captureSelectedProduct, setCaptureSelectedProduct] = useState(null);
@@ -78,7 +87,8 @@ export default function App() {
         const defaultPayload = {
           id: 1,
           nombre_farmacia: 'Farmacia Local',
-          margen_minimo: 20.0
+          margen_minimo: 20.0,
+          admin_pin: '729490'
         };
         const { data: insertedData, error: insertError } = await supabase
           .from('configuracion')
@@ -106,6 +116,27 @@ export default function App() {
   const handleSelectProductForCapture = (product) => {
     setCaptureSelectedProduct(product);
     setActiveTab('precios-competencia');
+  };
+
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    const correctPin = config?.admin_pin || '729490';
+    if (pinInput === correctPin) {
+      setIsAdmin(true);
+      setShowPinModal(false);
+      setPinInput('');
+      setPinError('');
+      showToast('Modo Administrador Desbloqueado', 'success');
+      setActiveTab('dashboard'); // Redirigir al dashboard al desbloquear
+    } else {
+      setPinError('PIN incorrecto');
+    }
+  };
+
+  const handleLogoutAdmin = () => {
+    setIsAdmin(false);
+    setActiveTab('precios-competencia');
+    showToast('Sesión de administrador cerrada', 'info');
   };
 
   // Si no hay configuración de Supabase, cargar Setup Wizard
@@ -188,13 +219,15 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard Comparativo', icon: LayoutDashboard },
-    { id: 'productos', label: 'Catálogo y Precios', icon: Pill },
-    { id: 'precios-competencia', label: 'Captura Competencia', icon: DollarSign },
-    { id: 'competidores', label: 'Competidores', icon: Users },
-    { id: 'reportes', label: 'Gráficos y Reportes', icon: BarChart3 },
-    { id: 'configuracion', label: 'Configuración', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard Comparativo', icon: LayoutDashboard, adminOnly: true },
+    { id: 'productos', label: 'Catálogo y Precios', icon: Pill, adminOnly: true },
+    { id: 'precios-competencia', label: 'Captura Competencia', icon: DollarSign, adminOnly: false },
+    { id: 'competidores', label: 'Competidores', icon: Users, adminOnly: true },
+    { id: 'reportes', label: 'Gráficos y Reportes', icon: BarChart3, adminOnly: true },
+    { id: 'configuracion', label: 'Configuración', icon: Settings, adminOnly: true },
   ];
+
+  const visibleNavItems = navItems.filter(item => isAdmin ? true : !item.adminOnly);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-800">
@@ -215,7 +248,7 @@ export default function App() {
 
           {/* Menú de Tabs */}
           <nav className="p-4 space-y-1">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
@@ -237,13 +270,34 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Footer Sidebar */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center space-x-1.5 font-medium">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-slate-400">Supabase Online</span>
+        {/* Footer Sidebar y Botón de Administrador */}
+        <div className="flex flex-col mt-auto">
+          <div className="p-4">
+            {isAdmin ? (
+              <button
+                onClick={handleLogoutAdmin}
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-emerald-400 border border-emerald-900/50 hover:bg-emerald-900/30 transition-all"
+              >
+                <Unlock className="h-4 w-4" />
+                <span>Cerrar Sesión Admin</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowPinModal(true)}
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-all"
+              >
+                <Lock className="h-4 w-4" />
+                <span>Modo Administrador</span>
+              </button>
+            )}
           </div>
-          <span>v1.0</span>
+          <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
+            <div className="flex items-center space-x-1.5 font-medium">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-slate-400">Supabase Online</span>
+            </div>
+            <span>v1.0</span>
+          </div>
         </div>
       </aside>
 
@@ -290,6 +344,57 @@ export default function App() {
                 : 'bg-blue-50 text-blue-900 border-blue-200'
           }`}>
             <span className="font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* PIN MODAL */}
+      {showPinModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100">
+              <h3 className="font-bold text-lg text-slate-800 flex items-center">
+                <Lock className="h-5 w-5 mr-2 text-emerald-600" />
+                Desbloquear Acceso
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowPinModal(false);
+                  setPinInput('');
+                  setPinError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handlePinSubmit} className="p-6">
+              <p className="text-sm text-slate-500 mb-4 text-center">
+                Ingresa tu PIN de administrador para acceder a todas las funciones.
+              </p>
+              
+              <div className="mb-6">
+                <input
+                  type="password"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  className="w-full text-center text-2xl tracking-[0.5em] px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 outline-none transition-all font-mono"
+                  placeholder="••••••"
+                  autoFocus
+                />
+                {pinError && (
+                  <p className="text-red-500 text-xs font-semibold mt-2 text-center">{pinError}</p>
+                )}
+              </div>
+              
+              <button
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all"
+              >
+                Desbloquear
+              </button>
+            </form>
           </div>
         </div>
       )}

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS configuracion (
         'Farm. Luis Morales', 
         'Farm. Sofia Castro'
     ],
+    admin_pin TEXT NOT NULL DEFAULT '729490',
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
 
