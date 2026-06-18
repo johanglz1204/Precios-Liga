@@ -27,16 +27,15 @@ import {
 const ADMIN_EMAIL = 'admin@fm.com';
 
 export default function App() {
-  const [supabaseConnected, setSupabaseConnected] = useState(isSupabaseConfigured);
+  const [supabaseConnected] = useState(isSupabaseConfigured);
   const [dbMissingTables, setDbMissingTables] = useState(false);
   const [config, setConfig] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Sesión de Supabase Auth
-  const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // Enrutamiento SPA — admin inicia en dashboard, capturista en captura
+  const [session, setSession] = useState(undefined); // undefined = aún no determinado
+  
+  // Enrutamiento SPA
   const [activeTab, setActiveTab] = useState('precios-competencia');
 
   // Producto seleccionado para pre-cargar en Captura de Precios
@@ -54,17 +53,28 @@ export default function App() {
 
   // Escuchar cambios de sesión de Supabase Auth
   useEffect(() => {
-    // Obtener sesión actual al montar
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    if (!supabase || !supabaseConnected) {
+      setSession(null);
+      return;
+    }
+
+    // Obtener sesión actual (restaurada del localStorage)
+    supabase.auth.getSession().then(({ data }) => {
+      const currentSession = data?.session ?? null;
       setSession(currentSession);
-      setAuthLoading(false);
+      // Definir pestaña inicial según rol
+      if (currentSession?.user?.email === ADMIN_EMAIL) {
+        setActiveTab('dashboard');
+      } else {
+        setActiveTab('precios-competencia');
+      }
+    }).catch(() => {
+      setSession(null);
     });
 
     // Suscribirse a cambios futuros (login / logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      setAuthLoading(false);
-      // Si el admin inicia sesión, llevarlo al dashboard
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession ?? null);
       if (newSession?.user?.email === ADMIN_EMAIL) {
         setActiveTab('dashboard');
       } else {
@@ -72,17 +82,17 @@ export default function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [supabaseConnected]);
 
-  // Cargar config cuando hay sesión y Supabase está conectado
+  // Cargar config cuando hay sesión activa
   useEffect(() => {
-    if (supabaseConnected && session) {
+    if (session && supabaseConnected) {
       fetchConfig();
-    } else if (!session) {
-      setLoading(false);
     }
-  }, [supabaseConnected, session]);
+  }, [session, supabaseConnected]);
 
   const fetchConfig = async () => {
     setLoading(true);
@@ -128,7 +138,6 @@ export default function App() {
 
   // Callback del asistente de setup
   const handleOnConfigured = () => {
-    setSupabaseConnected(true);
     window.location.reload();
   };
 
@@ -142,13 +151,14 @@ export default function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setConfig(null);
+    setSession(null);
     setActiveTab('precios-competencia');
   };
 
   // ── Guardas de estado ──────────────────────────────────────────────────
 
-  // Cargando estado de autenticación
-  if (authLoading) {
+  // session === undefined significa que aún se está determinando (verificando localStorage)
+  if (session === undefined) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-3">
@@ -178,7 +188,6 @@ export default function App() {
             <AlertTriangle className="h-6 w-6 text-red-100" />
             <h1 className="text-xl font-bold">Tablas Faltantes en Supabase</h1>
           </div>
-          
           <div className="p-6 space-y-4">
             <p className="text-slate-600 text-sm leading-relaxed">
               La conexión con Supabase se estableció correctamente, pero las tablas necesarias para FarmaPrecios no existen en tu base de datos.
@@ -192,7 +201,6 @@ export default function App() {
                 <li>Haz clic en <strong>Run</strong> para inicializar las tablas de la farmacia.</li>
               </ol>
             </div>
-            
             <button
               onClick={fetchConfig}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg text-sm transition-colors flex items-center justify-center space-x-1"
@@ -291,7 +299,7 @@ export default function App() {
                   }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-150 ${isActive ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
-                  <Icon className={`h-4.5 w-4.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -349,7 +357,6 @@ export default function App() {
               {config ? config.nombre_farmacia : 'Cargando farmacia...'}
             </h2>
           </div>
-          
           <div className="flex items-center space-x-4">
             <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1 rounded-full font-medium">
               <Database className="h-3.5 w-3.5 text-emerald-600" />
@@ -373,7 +380,7 @@ export default function App() {
 
       {/* TOAST SYSTEM */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-5 right-5 z-50">
           <div className={`flex items-center space-x-2 px-5 py-3 rounded-lg shadow-xl border text-sm font-semibold ${
             toast.type === 'success' 
               ? 'bg-emerald-50 text-emerald-900 border-emerald-200' 
