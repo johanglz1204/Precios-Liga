@@ -30,7 +30,7 @@ export default function App() {
   const [supabaseConnected] = useState(isSupabaseConfigured);
   const [dbMissingTables, setDbMissingTables] = useState(false);
   const [config, setConfig] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Sesión de Supabase Auth
   const [session, setSession] = useState(undefined); // undefined = aún no determinado
@@ -381,7 +381,7 @@ export default function App() {
 
         {/* CONTENIDO DINÁMICO */}
         <main className="flex-1 p-6 overflow-y-auto">
-          {loading ? (
+          {(loading || !config) ? (
             <div className="min-h-[50vh] flex flex-col items-center justify-center text-slate-500">
               <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
               <p className="font-semibold text-sm">Cargando base de datos y configuración...</p>
