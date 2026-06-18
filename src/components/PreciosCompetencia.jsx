@@ -233,13 +233,22 @@ export default function PreciosCompetencia({ config, showToast }) {
 
         if (insertError) throw insertError;
         
-        // Registrar en historial si existe la tabla
-        try {
-          await supabase
-            .from('historial_precios_competencia')
-            .insert([payload]);
-        } catch (histErr) {
-          console.warn('Error al guardar en el historial:', histErr.message);
+        // Registrar en historial
+        const historialPayload = {
+          producto_id: selectedProduct.id,
+          competidor_id: comp.id,
+          precio: priceNum,
+          fecha_captura: dateStr,
+          empleado: data.empleado,
+          notas: data.notas?.trim() || null,
+          mes_calendario: mesCalendario
+        };
+        const { error: histErr } = await supabase
+          .from('historial_precios_competencia')
+          .insert([historialPayload]);
+        if (histErr) {
+          console.error('Error al guardar en el historial:', histErr);
+          showToast('Precio guardado, pero falló el historial: ' + histErr.message, 'error');
         }
         
         showToast(`Precio guardado para ${comp.nombre}`, 'success');
@@ -259,13 +268,22 @@ export default function PreciosCompetencia({ config, showToast }) {
 
       if (updateError) throw updateError;
 
-      // Registrar en historial si existe la tabla
-      try {
-        await supabase
-          .from('historial_precios_competencia')
-          .insert([duplicateModal.payload]);
-      } catch (histErr) {
-        console.warn('Error al guardar en el historial (overwrite):', histErr.message);
+      // Registrar en historial
+      const historialPayload = {
+        producto_id: duplicateModal.payload.producto_id,
+        competidor_id: duplicateModal.payload.competidor_id,
+        precio: duplicateModal.payload.precio,
+        fecha_captura: duplicateModal.payload.fecha_captura,
+        empleado: duplicateModal.payload.empleado,
+        notas: duplicateModal.payload.notas || null,
+        mes_calendario: duplicateModal.payload.mes_calendario
+      };
+      const { error: histErr } = await supabase
+        .from('historial_precios_competencia')
+        .insert([historialPayload]);
+      if (histErr) {
+        console.error('Error al guardar en el historial (overwrite):', histErr);
+        showToast('Precio actualizado, pero falló el historial: ' + histErr.message, 'error');
       }
 
       showToast(`Precio actualizado para ${duplicateModal.competidorNombre}`, 'success');
