@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import SupabaseSetup from './components/SupabaseSetup';
+import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Productos from './components/Productos';
 import PreciosCompetencia from './components/PreciosCompetencia';
@@ -17,27 +18,27 @@ import {
   AlertTriangle, 
   Database,
   RefreshCw,
-  Bell,
-  Lock,
-  Unlock,
-  X
+  LogOut,
+  ShieldCheck,
+  User
 } from 'lucide-react';
+
+// Correo que identifica al administrador
+const ADMIN_EMAIL = 'admin@fm.com';
 
 export default function App() {
   const [supabaseConnected, setSupabaseConnected] = useState(isSupabaseConfigured);
   const [dbMissingTables, setDbMissingTables] = useState(false);
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // Enrutamiento SPA
-  const [activeTab, setActiveTab] = useState('precios-competencia'); // Inicia en captura
-  
-  // Sistema de Roles y PIN
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState('');
-  
+
+  // Sesión de Supabase Auth
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Enrutamiento SPA — admin inicia en dashboard, capturista en captura
+  const [activeTab, setActiveTab] = useState('precios-competencia');
+
   // Producto seleccionado para pre-cargar en Captura de Precios
   const [captureSelectedProduct, setCaptureSelectedProduct] = useState(null);
 
@@ -46,25 +47,47 @@ export default function App() {
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
-    // Auto ocultar después de 4 segundos
     setTimeout(() => {
       setToast(null);
     }, 4000);
   };
 
+  // Escuchar cambios de sesión de Supabase Auth
   useEffect(() => {
-    if (supabaseConnected) {
+    // Obtener sesión actual al montar
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setAuthLoading(false);
+    });
+
+    // Suscribirse a cambios futuros (login / logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setAuthLoading(false);
+      // Si el admin inicia sesión, llevarlo al dashboard
+      if (newSession?.user?.email === ADMIN_EMAIL) {
+        setActiveTab('dashboard');
+      } else {
+        setActiveTab('precios-competencia');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Cargar config cuando hay sesión y Supabase está conectado
+  useEffect(() => {
+    if (supabaseConnected && session) {
       fetchConfig();
-    } else {
+    } else if (!session) {
       setLoading(false);
     }
-  }, [supabaseConnected]);
+  }, [supabaseConnected, session]);
 
   const fetchConfig = async () => {
     setLoading(true);
     setDbMissingTables(false);
     try {
-      // Intentar leer la fila 1 de configuración
       const { data, error } = await supabase
         .from('configuracion')
         .select('*')
@@ -72,7 +95,6 @@ export default function App() {
         .maybeSingle();
 
       if (error) {
-        // Código de error 42P01 en PostgreSQL significa que la tabla no existe
         if (error.code === '42P01') {
           setDbMissingTables(true);
           return;
@@ -83,12 +105,10 @@ export default function App() {
       if (data) {
         setConfig(data);
       } else {
-        // Si no existe, crear la fila 1 inicial con valores por defecto
         const defaultPayload = {
           id: 1,
           nombre_farmacia: 'Farmacia Local',
           margen_minimo: 20.0,
-          admin_pin: '729490'
         };
         const { data: insertedData, error: insertError } = await supabase
           .from('configuracion')
@@ -109,7 +129,7 @@ export default function App() {
   // Callback del asistente de setup
   const handleOnConfigured = () => {
     setSupabaseConnected(true);
-    window.location.reload(); // Recargar para inicializar el cliente Supabase con las nuevas credenciales en localStorage
+    window.location.reload();
   };
 
   // Atender click en Alertas para ir a capturar
@@ -118,30 +138,35 @@ export default function App() {
     setActiveTab('precios-competencia');
   };
 
-  const handlePinSubmit = (e) => {
-    e.preventDefault();
-    const correctPin = config?.admin_pin || '729490';
-    if (pinInput === correctPin) {
-      setIsAdmin(true);
-      setShowPinModal(false);
-      setPinInput('');
-      setPinError('');
-      showToast('Modo Administrador Desbloqueado', 'success');
-      setActiveTab('dashboard'); // Redirigir al dashboard al desbloquear
-    } else {
-      setPinError('PIN incorrecto');
-    }
-  };
-
-  const handleLogoutAdmin = () => {
-    setIsAdmin(false);
+  // Cerrar sesión
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setConfig(null);
     setActiveTab('precios-competencia');
-    showToast('Sesión de administrador cerrada', 'info');
   };
 
-  // Si no hay configuración de Supabase, cargar Setup Wizard
+  // ── Guardas de estado ──────────────────────────────────────────────────
+
+  // Cargando estado de autenticación
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm font-medium">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Sin credenciales de Supabase configuradas
   if (!supabaseConnected) {
     return <SupabaseSetup onConfigured={handleOnConfigured} />;
+  }
+
+  // Sin sesión activa → mostrar Login
+  if (!session) {
+    return <Login />;
   }
 
   // Si las tablas no existen
@@ -180,6 +205,10 @@ export default function App() {
       </div>
     );
   }
+
+  // ── Determinar rol del usuario actual ─────────────────────────────────
+  const isAdmin = session?.user?.email === ADMIN_EMAIL;
+  const userLabel = isAdmin ? 'Administrador' : 'Capturista';
 
   const renderActiveComponent = () => {
     switch (activeTab) {
@@ -233,8 +262,8 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-800">
       
       {/* SIDEBAR NAVIGATION */}
-      <aside className="w-full md:w-64 bg-slate-900 text-white flex flex-col justify-between shrink-0 shadow-xl z-20">
-        <div>
+      <aside className="w-full md:w-64 bg-slate-900 text-white flex flex-col shrink-0 shadow-xl z-20">
+        <div className="flex-1">
           {/* Logo / Header */}
           <div className="bg-slate-950 px-6 py-5 border-b border-slate-800 flex items-center space-x-2.5">
             <div className="p-2 bg-emerald-600 rounded-lg">
@@ -257,12 +286,12 @@ export default function App() {
                   onClick={() => {
                     setActiveTab(item.id);
                     if (item.id !== 'precios-competencia') {
-                      setCaptureSelectedProduct(null); // Resetear selección al cambiar de pestaña
+                      setCaptureSelectedProduct(null);
                     }
                   }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-150 ${isActive ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
-                  <Icon className={`h-4.5 w-4.5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
+                  <Icon className={`h-4.5 w-4.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -270,27 +299,36 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Footer Sidebar y Botón de Administrador */}
-        <div className="flex flex-col mt-auto">
-          <div className="p-4">
-            {isAdmin ? (
-              <button
-                onClick={handleLogoutAdmin}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-emerald-400 border border-emerald-900/50 hover:bg-emerald-900/30 transition-all"
-              >
-                <Unlock className="h-4 w-4" />
-                <span>Cerrar Sesión Admin</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowPinModal(true)}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-all"
-              >
-                <Lock className="h-4 w-4" />
-                <span>Modo Administrador</span>
-              </button>
-            )}
+        {/* Footer Sidebar — Usuario y Cerrar Sesión */}
+        <div className="mt-auto">
+          {/* Info del usuario */}
+          <div className="px-4 pb-3 pt-2">
+            <div className="flex items-center space-x-3 bg-slate-800/60 border border-slate-700/50 rounded-lg px-3 py-2.5">
+              <div className={`flex-shrink-0 p-1.5 rounded-md ${isAdmin ? 'bg-emerald-600/20' : 'bg-slate-700'}`}>
+                {isAdmin 
+                  ? <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  : <User className="h-4 w-4 text-slate-400" />
+                }
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white truncate">{userLabel}</p>
+                <p className="text-[10px] text-slate-500 truncate">{session?.user?.email}</p>
+              </div>
+            </div>
           </div>
+
+          {/* Botón Cerrar Sesión */}
+          <div className="px-4 pb-3">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-500 hover:text-red-400 hover:bg-red-900/20 border border-transparent hover:border-red-900/30 transition-all"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
+
+          {/* Status bar */}
           <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
             <div className="flex items-center space-x-1.5 font-medium">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -304,7 +342,7 @@ export default function App() {
       {/* CONTENEDOR PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0">
         
-        {/* Cabecera superior (Barra de estado) */}
+        {/* Cabecera superior */}
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-10">
           <div className="flex items-center space-x-2">
             <h2 className="text-lg font-bold text-slate-800 tracking-tight">
@@ -333,7 +371,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* TOAST SYSTEM (Notificación flotante) */}
+      {/* TOAST SYSTEM */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-5 duration-200">
           <div className={`flex items-center space-x-2 px-5 py-3 rounded-lg shadow-xl border text-sm font-semibold ${
@@ -344,57 +382,6 @@ export default function App() {
                 : 'bg-blue-50 text-blue-900 border-blue-200'
           }`}>
             <span className="font-medium">{toast.message}</span>
-          </div>
-        </div>
-      )}
-
-      {/* PIN MODAL */}
-      {showPinModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-5 border-b border-slate-100">
-              <h3 className="font-bold text-lg text-slate-800 flex items-center">
-                <Lock className="h-5 w-5 mr-2 text-emerald-600" />
-                Desbloquear Acceso
-              </h3>
-              <button 
-                onClick={() => {
-                  setShowPinModal(false);
-                  setPinInput('');
-                  setPinError('');
-                }}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <form onSubmit={handlePinSubmit} className="p-6">
-              <p className="text-sm text-slate-500 mb-4 text-center">
-                Ingresa tu PIN de administrador para acceder a todas las funciones.
-              </p>
-              
-              <div className="mb-6">
-                <input
-                  type="password"
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
-                  className="w-full text-center text-2xl tracking-[0.5em] px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 outline-none transition-all font-mono"
-                  placeholder="••••••"
-                  autoFocus
-                />
-                {pinError && (
-                  <p className="text-red-500 text-xs font-semibold mt-2 text-center">{pinError}</p>
-                )}
-              </div>
-              
-              <button
-                type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all"
-              >
-                Desbloquear
-              </button>
-            </form>
           </div>
         </div>
       )}

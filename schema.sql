@@ -85,26 +85,27 @@ CREATE TABLE IF NOT EXISTS precios_competencia (
     CONSTRAINT unique_producto_competidor_mes UNIQUE(producto_id, competidor_id, mes_calendario)
 );
 
--- 5. DESHABILITAR ROW LEVEL SECURITY (RLS)
--- Como la aplicación es de uso interno en sucursales y usa el Anon Key, 
--- deshabilitamos RLS para permitir operaciones públicas directas desde el cliente.
-ALTER TABLE configuracion DISABLE ROW LEVEL SECURITY;
-ALTER TABLE productos DISABLE ROW LEVEL SECURITY;
-ALTER TABLE competidores DISABLE ROW LEVEL SECURITY;
-ALTER TABLE precios_competencia DISABLE ROW LEVEL SECURITY;
+-- 5. HABILITAR ROW LEVEL SECURITY (RLS) Y POLÍTICAS DE ACCESO
+-- Solo usuarios autenticados con Supabase Auth pueden leer/escribir.
+ALTER TABLE configuracion ENABLE ROW LEVEL SECURITY;
+ALTER TABLE productos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competidores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE precios_competencia ENABLE ROW LEVEL SECURITY;
+ALTER TABLE historial_precios_competencia ENABLE ROW LEVEL SECURITY;
 
--- 5. TABLA DE HISTORIAL DE CAMBIOS DE PRECIOS DE COMPETENCIA
--- Almacena todas las modificaciones de precios de competencia para auditoría e historial.
-CREATE TABLE IF NOT EXISTS historial_precios_competencia (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    producto_id UUID NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
-    competidor_id UUID NOT NULL REFERENCES competidores(id) ON DELETE CASCADE,
-    precio NUMERIC NOT NULL,
-    fecha_captura DATE NOT NULL DEFAULT CURRENT_DATE,
-    empleado TEXT NOT NULL,
-    notas TEXT,
-    mes_calendario TEXT NOT NULL, -- Formato 'YYYY-MM'
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-);
+-- Políticas: permite todas las operaciones a cualquier usuario autenticado
+CREATE POLICY "Acceso autenticado" ON configuracion
+  FOR ALL USING (auth.role() = 'authenticated');
 
-ALTER TABLE historial_precios_competencia DISABLE ROW LEVEL SECURITY;
+CREATE POLICY "Acceso autenticado" ON productos
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Acceso autenticado" ON competidores
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Acceso autenticado" ON precios_competencia
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Acceso autenticado" ON historial_precios_competencia
+  FOR ALL USING (auth.role() = 'authenticated');
+
