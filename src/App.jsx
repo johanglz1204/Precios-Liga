@@ -204,7 +204,7 @@ export default function App() {
           </div>
           <div className="p-6 space-y-4">
             <p className="text-slate-600 text-sm leading-relaxed">
-              La conexión con Supabase se estableció correctamente, pero las tablas necesarias para FarmaPrecios no existen en tu base de datos.
+              La conexión con Supabase se estableció correctamente, pero las tablas necesarias para el Catálogo de Precios Liga no existen en tu base de datos.
             </p>
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs font-mono text-slate-700">
               <p className="font-semibold text-slate-900 mb-1">Instrucciones:</p>
@@ -292,7 +292,7 @@ export default function App() {
               <Pill className="h-5 w-5 text-white animate-bounce" />
             </div>
             <div>
-              <h2 className="font-extrabold text-sm tracking-tight text-white uppercase">FarmaPrecios</h2>
+              <h2 className="font-extrabold text-sm tracking-tight text-white uppercase">Catálogo de Precios Liga</h2>
               <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Monitor Competitivo</p>
             </div>
           </div>

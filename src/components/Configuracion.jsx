@@ -160,7 +160,7 @@ export default function Configuracion({ config, onConfigUpdated, showToast }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', `FarmaPrecios_Respaldo_${new Date().toISOString().split('T')[0]}.json`);
+      link.setAttribute('download', `Catalogo_Precios_Liga_Respaldo_${new Date().toISOString().split('T')[0]}.json`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

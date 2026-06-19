@@ -51,7 +51,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-600 rounded-2xl shadow-lg shadow-emerald-600/30 mb-4">
             <Pill className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">FarmaPrecios</h1>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">Catálogo de Precios Liga</h1>
           <p className="text-emerald-400 text-sm font-semibold uppercase tracking-widest mt-1">Monitor Competitivo</p>
         </div>
 
@@ -133,7 +133,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-slate-700 text-xs mt-6">
-          Sistema de uso interno · FarmaPrecios v1.0
+          Sistema de uso interno · Catálogo de Precios Liga v1.0
         </p>
       </div>
     </div>

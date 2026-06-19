@@ -40,7 +40,7 @@ export default function SupabaseSetup({ onConfigured }) {
           <div className="inline-flex p-3 bg-white/10 rounded-full mb-3">
             <Database className="h-8 w-8 text-emerald-100" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">FarmaPrecios — Conexión</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Catálogo de Precios Liga — Conexión</h1>
           <p className="text-emerald-100 text-sm mt-1">Configuración del cliente de base de datos en la nube (Supabase)</p>
         </div>
 
@@ -84,7 +84,7 @@ export default function SupabaseSetup({ onConfigured }) {
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center text-emerald-800">
               <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-2 animate-bounce" />
               <p className="font-semibold text-lg">¡Configuración Guardada!</p>
-              <p className="text-sm text-emerald-600 mt-1">Conectando a Supabase y cargando FarmaPrecios...</p>
+              <p className="text-sm text-emerald-600 mt-1">Conectando a Supabase y cargando Catálogo de Precios Liga...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -135,7 +135,7 @@ export default function SupabaseSetup({ onConfigured }) {
         </div>
 
         <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-          <span>FarmaPrecios v1.0.0</span>
+          <span>Catálogo de Precios Liga v1.0.0</span>
           <span>Desarrollado con React + Supabase</span>
         </div>
 
