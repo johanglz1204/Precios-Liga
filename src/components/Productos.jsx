@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, Plus, Edit2, Trash2, Save, X, ChevronLeft, ChevronRight, Calculator, Calendar, FileSpreadsheet, Upload } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Save, X, ChevronLeft, ChevronRight, Calculator, Calendar, FileSpreadsheet, Upload, Percent } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import MejorarPrecioModal from './MejorarPrecioModal';
 
 export default function Productos({ config, showToast }) {
   const [productos, setProductos] = useState([]);
@@ -17,6 +18,9 @@ export default function Productos({ config, showToast }) {
   const autocompleteRef = useRef(null);
   const fileInputRef = useRef(null);
   const [importing, setImporting] = useState(false);
+
+  // Estado para el modal de "Mejorar Precio"
+  const [mejoraPrecioProduct, setMejoraPrecioProduct] = useState(null);
 
   const downloadTemplate = () => {
     try {
@@ -639,17 +643,24 @@ export default function Productos({ config, showToast }) {
                               <span>{formattedDate}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-right space-x-2">
+                          <td className="px-6 py-4 text-right space-x-1">
+                            <button
+                              onClick={() => setMejoraPrecioProduct(prod)}
+                              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-all"
+                              title="Mejorar Precio"
+                            >
+                              <Percent className="h-4 w-4 inline" />
+                            </button>
                             <button
                               onClick={() => handleEdit(prod)}
-                              className="p-1 text-slate-400 hover:text-emerald-600 transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all"
                               title="Editar"
                             >
                               <Edit2 className="h-4 w-4 inline" />
                             </button>
                             <button
                               onClick={() => handleDelete(prod.id)}
-                              className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
                               title="Eliminar"
                             >
                               <Trash2 className="h-4 w-4 inline" />
@@ -697,6 +708,20 @@ export default function Productos({ config, showToast }) {
         </div>
 
       </div>
+
+      {/* Modal de Mejorar Precio */}
+      {mejoraPrecioProduct && (
+        <MejorarPrecioModal
+          product={mejoraPrecioProduct}
+          config={config}
+          showToast={showToast}
+          onClose={() => setMejoraPrecioProduct(null)}
+          onPriceUpdated={() => {
+            setMejoraPrecioProduct(null);
+            fetchProductos();
+          }}
+        />
+      )}
     </div>
   );
 }
