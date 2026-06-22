@@ -152,10 +152,10 @@ export default function MejorarPrecioModal({ product, config, showToast, onClose
       />
 
       {/* Panel del Modal */}
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-slideUp">
+      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-slideUp">
 
         {/* ── HEADER ─────────────────────────────────────────────── */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 text-white shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
@@ -202,7 +202,7 @@ export default function MejorarPrecioModal({ product, config, showToast, onClose
         </div>
 
         {/* ── BODY ───────────────────────────────────────────────── */}
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-6 py-5 space-y-5 overflow-y-auto min-h-0">
 
           {/* Formulario de entrada */}
           <div className="space-y-4">
@@ -365,7 +365,7 @@ export default function MejorarPrecioModal({ product, config, showToast, onClose
         </div>
 
         {/* ── FOOTER ─────────────────────────────────────────────── */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors"
