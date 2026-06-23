@@ -286,7 +286,7 @@ export default function App() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard Comparativo', icon: LayoutDashboard, adminOnly: true },
-    { id: 'productos', label: 'Catálogo y Precios', icon: Pill, adminOnly: true },
+    { id: 'productos', label: 'Catálogo y Precios', icon: Pill, adminOnly: false },
     { id: 'precios-competencia', label: 'Captura Competencia', icon: DollarSign, adminOnly: false },
     { id: 'competidores', label: 'Competidores', icon: Users, adminOnly: true },
     { id: 'reportes', label: 'Gráficos y Reportes', icon: BarChart3, adminOnly: true },
