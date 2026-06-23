@@ -185,14 +185,14 @@ export default function PreciosCompetencia({ config, showToast }) {
       return;
     }
 
-    const priceNum = parseFloat(data.precio);
-    const dateStr = data.fecha_captura;
-    
-    // Calcular mes calendario de la fecha de captura seleccionada
-    const captureDate = new Date(dateStr + 'T00:00:00');
-    const year = captureDate.getFullYear();
-    const month = String(captureDate.getMonth() + 1).padStart(2, '0');
+    // Obtener la fecha de captura actual local de forma automatica
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     const mesCalendario = `${year}-${month}`;
+    const priceNum = parseFloat(data.precio);
 
     const payload = {
       producto_id: selectedProduct.id,
@@ -412,11 +412,10 @@ export default function PreciosCompetencia({ config, showToast }) {
                       <th className="px-6 py-3 min-w-[200px]">Competidor</th>
                       <th className="px-4 py-3 text-right min-w-[120px]">Último Guardado</th>
                       <th className="px-4 py-3 min-w-[140px]">Precio Captura ($) *</th>
-                      <th className="px-4 py-3 min-w-[160px]">Fecha Captura</th>
                       <th className="px-4 py-3 min-w-[180px]">Quién Capturó *</th>
                       <th className="px-4 py-3 min-w-[180px]">Tipo de Oferta</th>
                       <th className="px-4 py-3 min-w-[200px]">Notas</th>
-                      <th className="px-6 py-3 text-center">Acción</th>
+                      <th className="px-6 py-3 text-center w-20">Acción</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -464,19 +463,6 @@ export default function PreciosCompetencia({ config, showToast }) {
                                 className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg text-sm font-mono text-right focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white"
                                 value={data.precio}
                                 onChange={(e) => handleGridChange(comp.id, 'precio', e.target.value)}
-                              />
-                            </div>
-                          </td>
-
-                          {/* Entrada de Fecha */}
-                          <td className="px-4 py-4">
-                            <div className="relative rounded-lg shadow-sm">
-                              <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                              <input
-                                type="date"
-                                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white"
-                                value={data.fecha_captura}
-                                onChange={(e) => handleGridChange(comp.id, 'fecha_captura', e.target.value)}
                               />
                             </div>
                           </td>
@@ -530,10 +516,10 @@ export default function PreciosCompetencia({ config, showToast }) {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => handleSaveCompetidorPrecio(comp)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-sm transition-all hover:shadow hover:scale-[1.02] active:scale-[0.98] mx-auto min-w-[90px]"
+                              title="Guardar registro"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-2.5 rounded-lg flex items-center justify-center shadow-sm transition-all hover:shadow hover:scale-[1.05] active:scale-[0.95] mx-auto"
                             >
-                              <Save className="h-3.5 w-3.5" />
-                              <span>Guardar</span>
+                              <Save className="h-4 w-4" />
                             </button>
                           </td>
 
