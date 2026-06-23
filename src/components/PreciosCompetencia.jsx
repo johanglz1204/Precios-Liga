@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, Save, AlertTriangle, AlertCircle, Calendar, User, FileText, Check, DollarSign } from 'lucide-react';
+import { Search, Save, AlertTriangle, AlertCircle, Calendar, User, FileText, Check, DollarSign, Tag } from 'lucide-react';
 
 export default function PreciosCompetencia({ config, showToast }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -129,7 +129,8 @@ export default function PreciosCompetencia({ config, showToast }) {
           precio: '',
           fecha_captura: new Date().toISOString().split('T')[0],
           empleado: config.empleados?.[0] || '',
-          notas: ''
+          notas: '',
+          tipo_oferta: ''
         };
       });
 
@@ -140,7 +141,8 @@ export default function PreciosCompetencia({ config, showToast }) {
           precio: reg.precio.toString(),
           fecha_captura: reg.fecha_captura,
           empleado: reg.empleado,
-          notas: reg.notas || ''
+          notas: reg.notas || '',
+          tipo_oferta: reg.tipo_oferta || ''
         };
       });
 
@@ -199,6 +201,7 @@ export default function PreciosCompetencia({ config, showToast }) {
       fecha_captura: dateStr,
       empleado: data.empleado,
       notas: data.notas?.trim() || null,
+      tipo_oferta: data.tipo_oferta?.trim() || null,
       mes_calendario: mesCalendario
     };
 
@@ -241,6 +244,7 @@ export default function PreciosCompetencia({ config, showToast }) {
           fecha_captura: dateStr,
           empleado: data.empleado,
           notas: data.notas?.trim() || null,
+          tipo_oferta: data.tipo_oferta?.trim() || null,
           mes_calendario: mesCalendario
         };
         const { error: histErr } = await supabase
@@ -276,6 +280,7 @@ export default function PreciosCompetencia({ config, showToast }) {
         fecha_captura: duplicateModal.payload.fecha_captura,
         empleado: duplicateModal.payload.empleado,
         notas: duplicateModal.payload.notas || null,
+        tipo_oferta: duplicateModal.payload.tipo_oferta || null,
         mes_calendario: duplicateModal.payload.mes_calendario
       };
       const { error: histErr } = await supabase
@@ -409,6 +414,7 @@ export default function PreciosCompetencia({ config, showToast }) {
                       <th className="px-6 py-3 w-40">Precio Captura ($) *</th>
                       <th className="px-4 py-3 w-48">Fecha Captura</th>
                       <th className="px-4 py-3 w-56">Quién Capturó (Empleado) *</th>
+                      <th className="px-4 py-3 w-48">Tipo de Oferta</th>
                       <th className="px-4 py-3">Notas</th>
                       <th className="px-6 py-3 text-center">Acción</th>
                     </tr>
@@ -416,7 +422,7 @@ export default function PreciosCompetencia({ config, showToast }) {
                   <tbody className="divide-y divide-slate-200">
                     {competidores.map((comp) => {
                       const guardadoEsteMes = preciosActuales[comp.id];
-                      const data = gridData[comp.id] || { precio: '', fecha_captura: '', empleado: '', notas: '' };
+                      const data = gridData[comp.id] || { precio: '', fecha_captura: '', empleado: '', notas: '', tipo_oferta: '' };
 
                       return (
                         <tr key={comp.id} className="hover:bg-slate-50 transition-colors">
@@ -492,13 +498,27 @@ export default function PreciosCompetencia({ config, showToast }) {
                             </div>
                           </td>
 
+                          {/* Tipo de Oferta */}
+                          <td className="px-4 py-4">
+                            <div className="relative">
+                              <Tag className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                              <input
+                                type="text"
+                                placeholder="Ej. 3+1, 4+1, Desc 10%..."
+                                className="w-full pl-8 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                value={data.tipo_oferta}
+                                onChange={(e) => handleGridChange(comp.id, 'tipo_oferta', e.target.value)}
+                              />
+                            </div>
+                          </td>
+
                           {/* Notas */}
                           <td className="px-4 py-4">
                             <div className="relative">
                               <FileText className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
                               <input
                                 type="text"
-                                placeholder="Ej. Oferta 3x2, caducidad..."
+                                placeholder="Observaciones generales..."
                                 className="w-full pl-7 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 value={data.notas}
                                 onChange={(e) => handleGridChange(comp.id, 'notas', e.target.value)}

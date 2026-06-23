@@ -15,8 +15,13 @@ export default function Login() {
     setLoading(true);
 
     try {
+      let loginEmail = email.trim();
+      if (loginEmail && !loginEmail.includes('@')) {
+        loginEmail = `${loginEmail}@fm.com`;
+      }
+
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: loginEmail,
         password,
       });
 

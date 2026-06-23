@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS precios_competencia (
     fecha_captura DATE NOT NULL DEFAULT CURRENT_DATE,
     empleado TEXT NOT NULL,
     notas TEXT,
+    tipo_oferta TEXT, -- Tipo de oferta/promoción (ej. "3+1", "4+1", "Descuento 10%", "Plan Lealtad")
     mes_calendario TEXT NOT NULL, -- Formato 'YYYY-MM'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
     CONSTRAINT unique_producto_competidor_mes UNIQUE(producto_id, competidor_id, mes_calendario)

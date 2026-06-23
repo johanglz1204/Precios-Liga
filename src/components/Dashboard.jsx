@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShieldCheck, AlertTriangle, XOctagon, Sparkles, Filter, RefreshCw, Calendar, Clock, User, FileText, X, Search } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, XOctagon, Sparkles, Filter, RefreshCw, Calendar, Clock, User, FileText, X, Search, Tag } from 'lucide-react';
 
 export default function Dashboard({ config, showToast }) {
   const [competidores, setCompetidores] = useState([]);
@@ -694,6 +694,7 @@ export default function Dashboard({ config, showToast }) {
                         <th className="px-4 py-3">Fecha Captura</th>
                         <th className="px-4 py-3 text-right">Precio ($)</th>
                         <th className="px-4 py-3">Quién Registró</th>
+                        <th className="px-4 py-3">Tipo Oferta</th>
                         <th className="px-4 py-3">Notas</th>
                         <th className="px-4 py-3 text-right">Creado el</th>
                       </tr>
@@ -710,6 +711,16 @@ export default function Dashboard({ config, showToast }) {
                           <td className="px-4 py-3 flex items-center space-x-1 mt-0.5">
                             <User className="h-3 w-3 text-slate-400" />
                             <span>{reg.empleado}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {reg.tipo_oferta ? (
+                              <span className="inline-flex items-center space-x-1 bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-violet-200">
+                                <Tag className="h-2.5 w-2.5" />
+                                <span>{reg.tipo_oferta}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-300">--</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 italic text-slate-500 font-normal">
                             {reg.notas ? (

@@ -239,7 +239,7 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
         'Costo Compra',
         'Nuestro Precio Venta',
         'Margen Propio %',
-        ...comps.map(c => `Precio ${c.nombre}`),
+        ...comps.flatMap(c => [`Precio ${c.nombre}`, `Tipo Oferta ${c.nombre}`]),
         'Precio Minimo Competencia',
         'Competidor con Precio Minimo',
         'Diferencia vs Minimo %'
@@ -254,18 +254,18 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
         // Mapear c/u
         const preciosComps = comps.map(c => {
           const match = pComps.find(p => p.competidor_id === c.id);
-          return match ? match.precio : '';
+          return match ? { precio: match.precio, tipo_oferta: match.tipo_oferta || '' } : { precio: '', tipo_oferta: '' };
         });
 
         // Min y margen
-        const preciosValidos = preciosComps.filter(p => p !== '');
+        const preciosValidos = preciosComps.filter(p => p.precio !== '').map(p => p.precio);
         const minComp = preciosValidos.length > 0 ? Math.min(...preciosValidos) : '';
         
         let minCompNombre = '';
         if (minComp !== '') {
           const matchingComps = [];
           preciosComps.forEach((p, idx) => {
-            if (p === minComp) {
+            if (p.precio === minComp) {
               matchingComps.push(comps[idx].nombre);
             }
           });
@@ -287,7 +287,10 @@ export default function Reportes({ config, showToast, onSelectProductForCapture 
           prod.costo.toFixed(2),
           prod.precio_venta.toFixed(2),
           margenPropio,
-          ...preciosComps.map(p => (p !== '' ? p.toFixed(2) : '')),
+          ...preciosComps.flatMap(p => [
+            p.precio !== '' ? p.precio.toFixed(2) : '',
+            p.tipo_oferta ? `"${p.tipo_oferta.replace(/"/g, '""')}"` : ''
+          ]),
           minComp !== '' ? minComp.toFixed(2) : '',
           `"${minCompNombre}"`,
           diffPct
