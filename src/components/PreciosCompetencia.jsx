@@ -409,13 +409,13 @@ export default function PreciosCompetencia({ config, showToast }) {
                 <table className="w-full border-collapse text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500 tracking-wider">
                     <tr>
-                      <th className="px-6 py-3">Competidor</th>
-                      <th className="px-4 py-3 text-right">Último Guardado</th>
-                      <th className="px-6 py-3 w-40">Precio Captura ($) *</th>
-                      <th className="px-4 py-3 w-48">Fecha Captura</th>
-                      <th className="px-4 py-3 w-56">Quién Capturó (Empleado) *</th>
-                      <th className="px-4 py-3 w-48">Tipo de Oferta</th>
-                      <th className="px-4 py-3">Notas</th>
+                      <th className="px-6 py-3 min-w-[200px]">Competidor</th>
+                      <th className="px-4 py-3 text-right min-w-[120px]">Último Guardado</th>
+                      <th className="px-4 py-3 min-w-[140px]">Precio Captura ($) *</th>
+                      <th className="px-4 py-3 min-w-[160px]">Fecha Captura</th>
+                      <th className="px-4 py-3 min-w-[180px]">Quién Capturó *</th>
+                      <th className="px-4 py-3 min-w-[180px]">Tipo de Oferta</th>
+                      <th className="px-4 py-3 min-w-[200px]">Notas</th>
                       <th className="px-6 py-3 text-center">Acción</th>
                     </tr>
                   </thead>
@@ -425,15 +425,15 @@ export default function PreciosCompetencia({ config, showToast }) {
                       const data = gridData[comp.id] || { precio: '', fecha_captura: '', empleado: '', notas: '', tipo_oferta: '' };
 
                       return (
-                        <tr key={comp.id} className="hover:bg-slate-50 transition-colors">
+                        <tr key={comp.id} className="hover:bg-slate-50/80 transition-colors align-middle">
                           
                           {/* Info Competidor */}
                           <td className="px-6 py-4 font-semibold text-slate-800">
-                            <div className="flex items-center space-x-2">
-                              <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: comp.color }} />
+                            <div className="flex items-center space-x-3">
+                              <span className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm border border-black/5" style={{ backgroundColor: comp.color }} />
                               <div>
-                                <p className="text-slate-900 leading-tight">{comp.nombre}</p>
-                                <p className="text-[10px] text-slate-400 font-normal mt-0.5">{comp.direccion || 'Sin dirección'}</p>
+                                <p className="text-slate-900 font-bold leading-snug">{comp.nombre}</p>
+                                <p className="text-[10px] text-slate-400 font-normal mt-0.5 max-w-[160px] truncate">{comp.direccion || 'Sin dirección'}</p>
                               </div>
                             </div>
                           </td>
@@ -442,26 +442,26 @@ export default function PreciosCompetencia({ config, showToast }) {
                           <td className="px-4 py-4 text-right">
                             {guardadoEsteMes ? (
                               <div className="text-xs">
-                                <span className="font-bold text-emerald-600 font-mono">${guardadoEsteMes.precio.toFixed(2)}</span>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Capturado el {guardadoEsteMes.fecha_captura}</p>
+                                <span className="font-bold text-emerald-600 font-mono text-sm">${guardadoEsteMes.precio.toFixed(2)}</span>
+                                <p className="text-[10px] text-slate-400 mt-0.5">el {guardadoEsteMes.fecha_captura}</p>
                               </div>
                             ) : (
-                              <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">
-                                Sin captura este mes
+                              <span className="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium border border-slate-200/50">
+                                Sin captura
                               </span>
                             )}
                           </td>
 
                           {/* Entrada de Precio */}
-                          <td className="px-6 py-4">
-                            <div className="relative">
+                          <td className="px-4 py-4">
+                            <div className="relative rounded-lg shadow-sm">
                               <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                               <input
                                 type="number"
                                 step="0.01"
                                 min="0"
                                 placeholder="0.00"
-                                className="w-full pl-7 pr-2 py-1.5 border border-slate-300 rounded-lg text-sm font-mono text-right focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg text-sm font-mono text-right focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white"
                                 value={data.precio}
                                 onChange={(e) => handleGridChange(comp.id, 'precio', e.target.value)}
                               />
@@ -470,11 +470,11 @@ export default function PreciosCompetencia({ config, showToast }) {
 
                           {/* Entrada de Fecha */}
                           <td className="px-4 py-4">
-                            <div className="relative">
+                            <div className="relative rounded-lg shadow-sm">
                               <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                               <input
                                 type="date"
-                                className="w-full pl-8 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white"
                                 value={data.fecha_captura}
                                 onChange={(e) => handleGridChange(comp.id, 'fecha_captura', e.target.value)}
                               />
@@ -483,14 +483,14 @@ export default function PreciosCompetencia({ config, showToast }) {
 
                           {/* Empleado Capturista */}
                           <td className="px-4 py-4">
-                            <div className="relative">
+                            <div className="relative rounded-lg shadow-sm">
                               <User className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                               <select
-                                className="w-full pl-8 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
                                 value={data.empleado}
                                 onChange={(e) => handleGridChange(comp.id, 'empleado', e.target.value)}
                               >
-                                <option value="">Selecciona...</option>
+                                <option value="">Seleccionar...</option>
                                 {config.empleados?.map((emp) => (
                                   <option key={emp} value={emp}>{emp}</option>
                                 ))}
@@ -500,12 +500,12 @@ export default function PreciosCompetencia({ config, showToast }) {
 
                           {/* Tipo de Oferta */}
                           <td className="px-4 py-4">
-                            <div className="relative">
-                              <Tag className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                            <div className="relative rounded-lg shadow-sm">
+                              <Tag className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                               <input
                                 type="text"
-                                placeholder="Ej. 3+1, 4+1, Desc 10%..."
-                                className="w-full pl-8 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                placeholder="Ej: 3+1, Descto 10%..."
+                                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all bg-white"
                                 value={data.tipo_oferta}
                                 onChange={(e) => handleGridChange(comp.id, 'tipo_oferta', e.target.value)}
                               />
@@ -514,12 +514,12 @@ export default function PreciosCompetencia({ config, showToast }) {
 
                           {/* Notas */}
                           <td className="px-4 py-4">
-                            <div className="relative">
-                              <FileText className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+                            <div className="relative rounded-lg shadow-sm">
+                              <FileText className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                               <input
                                 type="text"
-                                placeholder="Observaciones generales..."
-                                className="w-full pl-7 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                placeholder="Observaciones..."
+                                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white"
                                 value={data.notas}
                                 onChange={(e) => handleGridChange(comp.id, 'notas', e.target.value)}
                               />
@@ -530,7 +530,7 @@ export default function PreciosCompetencia({ config, showToast }) {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => handleSaveCompetidorPrecio(comp)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center space-x-1 shadow-sm transition-colors mx-auto"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-sm transition-all hover:shadow hover:scale-[1.02] active:scale-[0.98] mx-auto min-w-[90px]"
                             >
                               <Save className="h-3.5 w-3.5" />
                               <span>Guardar</span>
