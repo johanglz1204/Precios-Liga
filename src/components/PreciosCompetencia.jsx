@@ -409,12 +409,12 @@ export default function PreciosCompetencia({ config, showToast }) {
                 <table className="w-full table-fixed border-collapse text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500 tracking-wider">
                     <tr>
-                      <th className="px-3 py-3 w-[190px]">Competidor</th>
+                      <th className="px-3 py-3 w-[160px]">Competidor</th>
                       <th className="px-2 py-3 text-right w-[100px]">Último Guardado</th>
-                      <th className="px-2 py-3 w-[100px]">Precio ($) *</th>
-                      <th className="px-2 py-3 w-[130px]">Quién Capturó *</th>
+                      <th className="px-2 py-3 w-[90px]">Precio ($) *</th>
+                      <th className="px-2 py-3 w-[175px]">Quién Capturó *</th>
                       <th className="px-2 py-3 w-[140px]">Tipo de Oferta</th>
-                      <th className="px-2 py-3 w-[180px]">Notas</th>
+                      <th className="px-2 py-3 w-[120px]">Notas</th>
                       <th className="px-3 py-3 text-center w-12">💾</th>
                     </tr>
                   </thead>
