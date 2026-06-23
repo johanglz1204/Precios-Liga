@@ -445,52 +445,7 @@ export default function Productos({ config, showToast }) {
 
 
 
-            {/* SECCIÓN PRECIOS PROPIOS */}
-            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
-              <span className="text-xs font-bold text-slate-700 flex items-center">
-                <Calculator className="h-4 w-4 mr-1 text-emerald-600" />
-                Precios Propios
-              </span>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Costo Compra ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className="w-full px-2 py-1 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-mono text-right"
-                    value={costo}
-                    onChange={(e) => setCosto(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Precio Venta ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className="w-full px-2 py-1 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-mono text-right"
-                    value={precioVenta}
-                    onChange={(e) => setPrecioVenta(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Margen Calculado */}
-              <div className="flex justify-between items-center text-xs py-1 border-t border-slate-200">
-                <span className="text-slate-500 font-medium">Margen Calculado:</span>
-                <span className={`font-bold px-2 py-0.5 rounded font-mono ${margen >= config.margen_minimo ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-                  {margen}%
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 italic">Mínimo sugerido: {config.margen_minimo}%</p>
-            </div>
-
-            <div className="flex space-x-2 pt-2 border-t border-slate-100">
+            <div className="flex space-x-2 pt-2">
               <button
                 type="submit"
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm text-sm flex items-center justify-center space-x-1"
