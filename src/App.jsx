@@ -36,7 +36,14 @@ export default function App() {
   const [session, setSession] = useState(undefined); // undefined = aún no determinado
   
   // Enrutamiento SPA
-  const [activeTab, setActiveTab] = useState('precios-competencia');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('precios_liga_active_tab') || 'precios-competencia';
+  });
+
+  // Guardar activeTab en localStorage cada vez que cambia
+  useEffect(() => {
+    localStorage.setItem('precios_liga_active_tab', activeTab);
+  }, [activeTab]);
 
   // Producto seleccionado para pre-cargar en Captura de Precios
   const [captureSelectedProduct, setCaptureSelectedProduct] = useState(null);
@@ -66,10 +73,14 @@ export default function App() {
         const { data } = await supabase.auth.getSession();
         const currentSession = data?.session ?? null;
         setSession(currentSession);
-        if (currentSession?.user?.email === ADMIN_EMAIL) {
-          setActiveTab('dashboard');
-        } else {
-          setActiveTab('precios-competencia');
+        
+        // Si no hay pestaña guardada previamente, asignar la pestaña por defecto según rol
+        if (!localStorage.getItem('precios_liga_active_tab')) {
+          if (currentSession?.user?.email === ADMIN_EMAIL) {
+            setActiveTab('dashboard');
+          } else {
+            setActiveTab('precios-competencia');
+          }
         }
       } catch (err) {
         console.error('Error al obtener sesión:', err);
@@ -80,10 +91,14 @@ export default function App() {
         // Suscribirse a cambios futuros (login / logout)
         const result = supabase.auth.onAuthStateChange((_event, newSession) => {
           setSession(newSession ?? null);
-          if (newSession?.user?.email === ADMIN_EMAIL) {
-            setActiveTab('dashboard');
-          } else {
-            setActiveTab('precios-competencia');
+          
+          // Al iniciar sesión o cambiar, si no hay pestaña activa guardada, poner por defecto
+          if (newSession && !localStorage.getItem('precios_liga_active_tab')) {
+            if (newSession?.user?.email === ADMIN_EMAIL) {
+              setActiveTab('dashboard');
+            } else {
+              setActiveTab('precios-competencia');
+            }
           }
         });
         subscription = result?.data?.subscription ?? null;
